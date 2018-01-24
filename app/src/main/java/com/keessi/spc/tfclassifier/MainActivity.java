@@ -1,13 +1,22 @@
 package com.keessi.spc.tfclassifier;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
+import android.view.View;
+import android.widget.TextView;
+
+import com.chroma.chroma.Chroma;
 
 import java.io.IOException;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AudioRecordManager.OnAudioFrameCaptureListener {
     private static final String TAG = "MainActivity";
 
     private static final int INPUT_SIZE = 12;
@@ -17,32 +26,24 @@ public class MainActivity extends AppCompatActivity {
     private static final String LABEL_FILENAME = "chord_label.txt";
 
     private Classifier classifier;
+    private AudioRecordManager audioRecordManager;
+    private String targetChord;
+    private double threshold;
+
+    private TextView textShow;
+    private TextView testRes;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        initTensorFlowAndLoadModel();
-        double[][] inputValues = {
-                {0.03373813418138493, 0.04823863004439851, 0.055555076402155394, 0.05443372916600139, 0.18693963873766412, 0.17138538864577754, 0.4975850300134213, 0.1910232754658338, 0.1763754636526513, 0.49483399989581534, 0.595843641726081, 0.10529294675175511},
-                {0.43667998464294094, 0.008302032219806545, 0.07634833490994888, 0.0034916182955460617, 0.653099231885087, 0.03374117513697965, 0.022526649761676013, 0.607659405766839, 0.015427015112686265, 0.006322297449802297, 0.02635578659560242, 0.07066356167861139},
-                {0.46453144202742996, 0.009052391727495517, 0.10787494884328482, 0.005302911996630866, 0.5041362127966089, 0.020248451019939398, 0.017747562849229643, 0.7149288987248892, 0.010111863409750965, 0.0051574664657645635, 0.013185271018350098, 0.07848019147446089},
-                {0.5804486826059955, 0.013058215097408564, 0.08727409277740529, 0.004122267946146249, 0.4422461604442841, 0.02583341965069058, 0.011068712455797465, 0.6684891196264747, 0.015847240326454324, 0.026062085753521865, 0.020593197927469584, 0.10330223096651144},
-                {0.6651117787054694, 0.014641135778501497, 0.13126393354292287, 0.0033970318852138957, 0.37500684318330313, 0.03011739663116667, 0.006628521769717887, 0.6235308261784464, 0.014993618655292243, 0.021789155722412912, 0.030634400031528883, 0.09033458923929133},
-                {0.6806253811007567, 0.005640920970226678, 0.04919754632004122, 9.140866126176098E-4, 0.6173432560686313, 0.015694513212295945, 0.002259363135196043, 0.36815162937945933, 0.00852253734932227, 0.006429134509520214, 0.012494619622575849, 0.13086715808775926},
-                {0.6381394409089021, 0.004417436990452495, 0.086524489486498, 8.533562296669801E-4, 0.6717311496840069, 0.014766280634403826, 0.0014779779231229326, 0.3511869214492405, 0.00822795713296462, 0.011253546147236958, 0.007877619101308566, 0.10119144001185164},
-                {0.4522569272281727, 0.002531257033902623, 0.049442266408565784, 3.109827582315899E-4, 0.8576059602381567, 0.009388077116906398, 0.0028779652582824737, 0.22637493085884355, 0.0042599289862927, 0.0032335734158423176, 0.004420758802671067, 0.07832287635381498},
-                {0.4273639022811466, 0.0021604643803307313, 0.02616922299553418, 2.4003286986592698E-4, 0.8796431003152938, 0.008320233996249362, 0.002570904383251517, 0.18863868371626263, 0.0029405776094223613, 0.007440375539242312, 0.002596133419418118, 0.0846606325841212},
-                {0.43285519858494526, 0.0017234091950602114, 0.015020815779844654, 3.5291249685615495E-4, 0.8883512279395442, 0.006835710203125848, 0.0014466766309334709, 0.14154235803392054, 0.0024365237630413275, 0.005650989331562313, 0.002464742012246897, 0.055792016242444}
-        };
-        float[][] preValues = new float[10][12];
-        for (int i = 0; i < 10; i++) {
-            for (int j = 0; j < 12; j++) {
-                preValues[i][j] = (float) inputValues[i][j];
-            }
+        textShow = findViewById(R.id.textShow);
+        textShow.setMovementMethod(ScrollingMovementMethod.getInstance());
+        testRes = findViewById(R.id.textRes);
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, 1);
         }
-        List<String> results = classifier.predictSome(preValues);
-        Log.i("label", results.toString());
     }
 
     private void initTensorFlowAndLoadModel() {
@@ -58,5 +59,109 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             Log.e(TAG, "fail to init tensorflow and load model");
         }
+    }
+
+    public void onClickLoadModel(View view) {
+        textShow.setText(R.string.text_hint);
+        Log.i(TAG, "load model start");
+        textShow.append("加载模型开始\n");
+        initTensorFlowAndLoadModel();
+        textShow.append("加载模型结束\n");
+        Log.i(TAG, "load model end");
+    }
+
+    public void onClickStartTest(View view) {
+        if (classifier == null) {
+            textShow.append("请先加载模型\n");
+        } else {
+            Log.i(TAG, "test start");
+            textShow.append("录音开始\n");
+            if (audioRecordManager == null) {
+                audioRecordManager = new AudioRecordManager();
+            }
+            setTargetChord("a");
+            setThreshold(0.7);
+            audioRecordManager.setOnAudioFrameCaptureListener(this);
+            audioRecordManager.startCapture();
+        }
+    }
+
+    public void onClickStopTest(View view) {
+        audioRecordManager.stopCapture();
+        textShow.append("录音结束\n");
+        Log.i(TAG, "test end");
+        classifier = null;
+        textShow.append("释放模型\n");
+        Log.i(TAG, "release model");
+
+    }
+
+    @Override
+    public void onAudioFrameCapture(byte[] audioData) {
+        Log.i(TAG, "preprocess data start");
+        float[][] preData = preprocessAudioData(audioData);
+        Log.i(TAG, "preprocess data end");
+
+        Log.i(TAG, "predict data start");
+        List<String> predictResult = predict(preData);
+        Log.i(TAG, "predict data end");
+
+        Log.i(TAG, "evaluate data start");
+        boolean evaluateResult = evaluate(predictResult);
+        Log.i(TAG, "predict data end");
+
+        Log.i(TAG, "show result start");
+        showByPredictResult(Boolean.toString(evaluateResult) + "   " + predictResult.toString());
+        Log.i(TAG, "show result end");
+    }
+
+    private float[][] preprocessAudioData(byte[] audioData) {
+        double[] stepOne = new double[audioData.length / 2];
+        byte bl, bh;
+        short s;
+        for (int i = 0; i < stepOne.length; i++) {
+            bl = audioData[2 * i];
+            bh = audioData[2 * i + 1];
+            s = (short) ((bh & 0x00ff) << 8 | bl & 0x00ff);
+            stepOne[i] = s / 32768f;
+        }
+
+        Chroma chroma = new Chroma();
+        double[][] stepTwo = chroma.signal2Chroma(stepOne);
+
+        float[][] preData = new float[stepTwo.length][12];
+        for (int i = 0; i < preData.length; i++) {
+            for (int j = 0; j < 12; j++) {
+                preData[i][j] = (float) stepTwo[i][j];
+            }
+        }
+
+        return preData;
+    }
+
+    private List<String> predict(float[][] preData) {
+        return classifier.predictSome(preData);
+    }
+
+    private boolean evaluate(List<String> predictData) {
+        return classifier.evaluate(predictData, targetChord, threshold);
+    }
+
+    private void showByPredictResult(final String predictResult) {
+        Log.i(TAG, predictResult);
+        this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                testRes.setText(predictResult);
+            }
+        });
+    }
+
+    public void setTargetChord(String targetChord) {
+        this.targetChord = targetChord;
+    }
+
+    public void setThreshold(double threshold) {
+        this.threshold = threshold;
     }
 }

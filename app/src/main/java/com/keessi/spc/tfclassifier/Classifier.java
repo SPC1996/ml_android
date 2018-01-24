@@ -100,6 +100,21 @@ public class Classifier {
         }
         return results;
     }
+
+    public boolean evaluate(List<String> predictions, String target, double threshold) {
+        Log.i(TAG, "target value = " + target);
+        Log.i(TAG, "predict value list = " + predictions.toString());
+        int count = 0;
+        for (String prediction : predictions) {
+            if (prediction.equals(target)) {
+                count++;
+            }
+        }
+        double accuracy = ((double) count) / predictions.size();
+        Log.i(TAG, "accuracy is " + accuracy);
+        Log.i(TAG, "threshold is " + threshold);
+        return accuracy >= threshold;
+    }
 }
 
 
