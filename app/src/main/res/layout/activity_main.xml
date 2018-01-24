@@ -7,6 +7,12 @@
     android:layout_margin="15dp"
     tools:context="com.keessi.spc.tfclassifier.MainActivity">
 
+    <Spinner
+        android:id="@+id/chooseChord"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal" />
+
     <Button
         android:id="@+id/btnLoadModel"
         android:layout_width="wrap_content"
@@ -56,5 +62,26 @@
         android:singleLine="false"
         android:maxLines="6"
         android:scrollbars="horizontal" />
+
+    <TextView
+        android:id="@+id/textAmplitude"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAlignment="center" />
+
+    <TextView
+        android:id="@+id/textDecibel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAlignment="center" />
+
+    <TextView
+        android:id="@+id/textFrequency"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:textAlignment="center" />
 
 </LinearLayout>

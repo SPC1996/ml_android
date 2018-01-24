@@ -17,7 +17,7 @@ public class AudioRecordManager {
     private static final int DEFAULT_SAMPLE_RATE = 44100;
     private static final int DEFAULT_CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int DEFAULT_DATA_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int SAMPLE_PER_FRAME = 28000;
+    private static final int SAMPLE_PER_FRAME = 44100;
 
     private AudioRecord audioRecord;
     private OnAudioFrameCaptureListener audioFrameCaptureListener;
@@ -57,6 +57,7 @@ public class AudioRecordManager {
     }
 
     public boolean startCapture() {
+        Log.i(TAG, "audio record start");
         return startCapture(DEFAULT_SOURCE, DEFAULT_SAMPLE_RATE, DEFAULT_CHANNEL_CONFIG, DEFAULT_DATA_FORMAT);
     }
 
@@ -107,5 +108,6 @@ public class AudioRecordManager {
             audioRecord.stop();
         }
         isCaptureStarted = false;
+        Log.i(TAG, "audio record end");
     }
 }

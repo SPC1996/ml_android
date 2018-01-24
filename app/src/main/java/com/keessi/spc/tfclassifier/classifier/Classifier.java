@@ -1,4 +1,4 @@
-package com.keessi.spc.tfclassifier;
+package com.keessi.spc.tfclassifier.classifier;
 
 import android.content.res.AssetManager;
 import android.os.Trace;
@@ -20,6 +20,12 @@ import java.util.List;
 public class Classifier {
     private static final String TAG = "Classifier";
 
+    private static final int DEFAULT_INPUT_SIZE = 12;
+    private static final String DEFAULT_INPUT_NAME = "inputs";
+    private static final String DEFAULT_OUTPUT_NAME = "outputs";
+    private static final String DEFAULT_MODEL_FILENAME = "chord.pb";
+    private static final String DEFAULT_LABEL_FILENAME = "chord_label.txt";
+
     private String inputName;
     private String outputName;
     private int inputSize;
@@ -32,6 +38,24 @@ public class Classifier {
     private TensorFlowInferenceInterface inferenceInterface;
 
     private Classifier() {
+    }
+
+    public static Classifier createDefault(AssetManager assetManager) {
+        Classifier classifier;
+        try {
+            Log.i(TAG, "load model start");
+            classifier = create(assetManager,
+                    DEFAULT_MODEL_FILENAME,
+                    DEFAULT_LABEL_FILENAME,
+                    DEFAULT_INPUT_SIZE,
+                    DEFAULT_INPUT_NAME,
+                    DEFAULT_OUTPUT_NAME);
+            Log.i(TAG, "load model end");
+            return classifier;
+        } catch (IOException e) {
+            Log.e(TAG, "fail to init tensorflow and load model");
+            throw new RuntimeException("fail to init tensorflow and load model");
+        }
     }
 
     public static Classifier create(
