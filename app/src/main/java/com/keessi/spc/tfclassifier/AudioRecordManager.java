@@ -17,7 +17,7 @@ public class AudioRecordManager {
     private static final int DEFAULT_SAMPLE_RATE = 44100;
     private static final int DEFAULT_CHANNEL_CONFIG = AudioFormat.CHANNEL_IN_MONO;
     private static final int DEFAULT_DATA_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
-    private static final int SAMPLE_PER_FRAME = 44100;
+    private static final int SAMPLE_PER_FRAME = 22050;
 
     private AudioRecord audioRecord;
     private OnAudioFrameCaptureListener audioFrameCaptureListener;
